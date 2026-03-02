@@ -25,6 +25,10 @@ export default function ProductForm() {
     loadProduct()
   }, [params.id])
 
+  const handleCancel = () => {
+    navigate('/')
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (params.id) {
@@ -58,7 +62,7 @@ export default function ProductForm() {
 
         <div className="mt-4">
           <button className="bg-green-600 text-white px-4 py-2 rounded-lg">Guardar</button>
-          <button className="bg-red-600 text-white px-4 py-2 rounded-lg ml-2">Cancelar</button>
+          <button type="button" onClick={handleCancel} className="bg-red-600 text-white px-4 py-2 rounded-lg ml-2">Cancelar</button>
         </div>
       </form>
     </div>

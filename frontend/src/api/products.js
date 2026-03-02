@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const productsApi = axios.create({
-    baseURL: 'http://192.168.1.154:8000/api/producto/'
+    baseURL: 'http://192.168.1.154/api/producto/'
 })
 
 export const getProducts = () => productsApi.get()

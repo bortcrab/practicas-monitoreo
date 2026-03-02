@@ -25,8 +25,7 @@ SECRET_KEY = 'django-insecure-cjy20h=t+sm-gkh=cy2c9i0c=_i33_lui*wqls*h8#f-goe$e#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
-
+ALLOWED_HOSTS = ['crud-django.ma.net', '192.168.1.154', 'localhost', '127.0.0.1']
 
 # Application definition
 
@@ -77,11 +76,14 @@ WSGI_APPLICATION = 'inventario.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'crud_db',
+        'USER': 'crud_user',
+        'PASSWORD': 'tu_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -121,7 +123,10 @@ STATIC_URL = 'static/'
 
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    "http://crud-django.ma.net",
     "http://192.168.1.154:5173",
-    "*",
+    "http://192.168.1.154",
 ]
+
+USE_X_FORWARDED_HOST = True
+
