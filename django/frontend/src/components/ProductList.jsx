@@ -25,20 +25,43 @@ export default function ProductList() {
   }, [])
 
   return (
-    <div className="mt-8">
-      <h1 className="text-3xl font-bold text-sky-900">Productos Disponibles</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 mt-5 gap-5 text-white">
-        { products.map(product => (
-          <div key={product.id} className="bg-sky-900 p-4 rounded-lg shadow">
-            <p>{product.nombre}</p>
-            <p><span className="font-bold">Precio: $</span>{product.precio}</p>
-            <p>{product.descripcion}</p>
-            <div className="mt-4">
-              <button onClick={() => navigate(`/editar-producto/${product.id}`)} className="bg-green-600 text-white px-2 py-1 rounded-lg">Editar</button>
-              <button onClick={() => handleDelete(product.id)} className="bg-red-600 text-white px-2 py-1 rounded-lg ml-2">Eliminar</button>
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: "url('/background.jpg')"
+      }}
+    >
+      {/* overlay oscuro */}
+      <div className="min-h-screen bg-black/60 p-8">
+        <h1 className="text-3xl font-bold text-white">
+          Productos Disponibles
+        </h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 mt-5 gap-5 text-white">
+          { products.map(product => (
+            <div key={product.id} className="bg-sky-900/90 p-4 rounded-lg shadow">
+              <p>{product.nombre}</p>
+              <p><span className="font-bold">Precio: $</span>{product.precio}</p>
+              <p>{product.descripcion}</p>
+
+              <div className="mt-4">
+                <button
+                  onClick={() => navigate(`/editar-producto/${product.id}`)}
+                  className="bg-green-600 px-2 py-1 rounded-lg"
+                >
+                  Editar
+                </button>
+
+                <button
+                  onClick={() => handleDelete(product.id)}
+                  className="bg-red-600 px-2 py-1 rounded-lg ml-2"
+                >
+                  Eliminar
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
