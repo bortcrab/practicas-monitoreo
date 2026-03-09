@@ -13,7 +13,9 @@ class ProductController extends Controller
      */
     public function index()
     {
-        //
+        return inertia('products/index', [
+            'products' => Product::all()
+        ]);
     }
 
     /**
@@ -21,7 +23,9 @@ class ProductController extends Controller
      */
     public function create()
     {
-        //
+        return inertia('products/create', [
+            'product' => new Product()
+        ]);
     }
 
     /**
@@ -29,7 +33,11 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
-        //
+        $validated = $request->validated();
+
+        Product::create($validated);
+
+        return redirect()->route('products.index');
     }
 
     /**
@@ -45,7 +53,9 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        //
+        return inertia('products/edit', [
+            'product' => $product
+        ]);
     }
 
     /**
@@ -53,7 +63,8 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product)
     {
-        //
+        $product->update($request->validated());
+        return redirect()->route('products.index');
     }
 
     /**
@@ -61,6 +72,8 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        //
+        $product->delete();
+
+        return redirect()->route('products.index');
     }
 }
