@@ -14,3 +14,8 @@ scrape_configs:
   - job_name: 'django'
     static_configs:
       - targets: ['172.17.0.1:8000']
+
+  - job_name: 'laravel'
+    static_configs:
+      - targets: ['172.17.0.1:8001']
+    metrics_path: '/metrics'
