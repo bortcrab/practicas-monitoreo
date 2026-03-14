@@ -9,10 +9,34 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: apache
+  - job_name: apache_access
     static_configs:
       - targets:
           - localhost
         labels:
-          job: apache
-          __path__: /var/log/apache2/*.log
+          job: apache_access
+          __path__: /var/log/apache2/django_access.log
+
+  - job_name: apache_access_laravel
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: apache_access
+          __path__: /var/log/apache2/evolved_access.log
+
+  - job_name: apache_error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: apache_error
+          __path__: /var/log/apache2/django_error.log
+
+  - job_name: apache_error_laravel
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: apache_error
+          __path__: /var/log/apache2/evolved_error.log

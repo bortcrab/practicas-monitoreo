@@ -40,6 +40,7 @@ services:
     image: grafana/promtail:latest
     container_name: promtail
     restart: unless-stopped
+    user: root
     ports:
       - "9080:9080"
     volumes:
@@ -48,6 +49,27 @@ services:
     command: -config.file=/etc/promtail/promtail.yml
     depends_on:
       - loki
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=smtp.hostinger.com:587
+      - GF_SMTP_USER=diego.valenzuela@mediaaerea.net
+      - GF_SMTP_PASSWORD=P6=/KZlg01uf
+      - GF_SMTP_FROM_ADDRESS=diego.valenzuela@mediaaerea.net
+      - GF_SMTP_FROM_NAME=Grafana Alertas
+      - GF_SMTP_SKIP_VERIFY=true
+    depends_on:
+      - prometheus
 
 volumes:
   prometheus_data:
