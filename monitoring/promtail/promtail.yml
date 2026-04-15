@@ -23,7 +23,7 @@ scrape_configs:
           - localhost
         labels:
           job: apache_access
-          __path__: /var/log/apache2/evolved_access.log
+          __path__: /var/log/apache2/laravel_access.log
 
   - job_name: apache_error
     static_configs:
@@ -39,4 +39,4 @@ scrape_configs:
           - localhost
         labels:
           job: apache_error
-          __path__: /var/log/apache2/evolved_error.log
+          __path__: /var/log/apache2/laravel_error.log

